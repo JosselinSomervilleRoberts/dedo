@@ -1385,11 +1385,11 @@ ROBOT_INFO = {
         'file_name': 'fetch/fetch_no_gripper.urdf',
         'ee_joint_name': 'l_gripper_finger_joint',
         'ee_link_name': 'l_gripper_finger_link',
-        'global_scaling': 5.0,
+        'global_scaling': 8.0,
         'use_fixed_base': False,
-        'base_pos': np.array([12.0, 2.5, 0]),
+        'base_pos': np.array([7.0, 3.9, 0]),
         'rest_arm_qpos': np.array(
-            [0.4083, 0.4691, -0.6216, -2.9606, -0.9926, 3.4903, 1.5129]
+            [0, -0.5, 0, -1, 0, +1.5, 0]
         ),
     }
 }
