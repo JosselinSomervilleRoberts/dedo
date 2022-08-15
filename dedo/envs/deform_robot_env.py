@@ -51,8 +51,7 @@ class DeformRobotEnv(DeformEnv):
         res = super(DeformRobotEnv, self).load_objects(sim, args, debug)
         data_path = os.path.join(os.path.split(__file__)[0], '..', 'data')
         sim.setAdditionalSearchPath(data_path)
-        #robot_info = ROBOT_INFO.get(f'franka{self.num_anchors:d}', None)
-        robot_info = ROBOT_INFO.get(f'fetch{self.num_anchors:d}', None)
+        robot_info = ROBOT_INFO.get(args.robot_name + f'{self.num_anchors:d}', None)
         assert(robot_info is not None)  # make sure robot_info is ok
         robot_path = os.path.join(data_path, 'robots',
                                   robot_info['file_name'])

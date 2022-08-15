@@ -274,7 +274,7 @@ class DeformEnv(gym.Env):
         # Setup dynamic anchors.
         if not self.food_packing:
             self.make_anchors()
-            print("WES AGATHE", self.anchors)
+            print("\n\n\n\n\nWESh AGATHE", self.anchors)
 
         # Set up viz.
         if self.args.viz:  # loading done, so enable debug rendering if needed
