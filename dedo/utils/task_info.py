@@ -1368,18 +1368,18 @@ ROBOT_INFO = {
     },
     'fetch2': {
         'file_name': 'fetch/fetch_dual.urdf',
-        'ee_joint_name': 'l_gripper_finger_joint_r',
-        'ee_link_name': 'l_gripper_finger_link_r',
-        'left_ee_joint_name': 'l_gripper_finger_joint_l',
-        'left_ee_link_name': 'l_gripper_finger_link_l',
+        'ee_joint_name': 'l_gripper_finger_joint_l',
+        'ee_link_name': 'l_gripper_finger_link_l',
+        'left_ee_joint_name': 'l_gripper_finger_joint_r',
+        'left_ee_link_name': 'l_gripper_finger_link_r',
         'global_scaling': 8.0,
         'use_fixed_base': False,
-        'base_pos': np.array([1.0, 2.5, 0]),
+        'base_pos': np.array([7.0, 4.5, 0]),
         'rest_arm_qpos': np.array(
-            [1.2348, 0.2811, -0.6086, -2.251, -1.3675, 2.16, 1.2328]
+            [0, -0.5, 0, -1, 0, +1.5, 0] # Right
         ),
         'left_rest_arm_qpos': np.array(
-            [-0.1258, 0.4588, -0.5516, -2.251, -1.3686, 2.16, 1.2353]),
+            [0, -0.5, 0, -1, 0, +1.5, 0]), # Left
     },
     'fetch1': {
         'file_name': 'fetch/fetch_no_gripper.urdf',

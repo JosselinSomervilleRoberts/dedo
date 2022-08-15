@@ -246,6 +246,21 @@ class DeformEnv(gym.Env):
     def seed(self, seed):
         np.random.seed(seed)
 
+    def make_anchors(self):
+        print("\n\n\nself.make_anchors()")
+        preset_dynamic_anchor_vertices = get_preset_properties(
+            DEFORM_INFO, self.deform_obj, 'deform_anchor_vertices')
+        _, mesh = get_mesh_data(self.sim, self.deform_id)
+        for i in range(self.num_anchors):  # make anchors
+            anchor_init_pos = self.args.anchor_init_pos if (i % 2) == 0 else \
+                self.args.other_anchor_init_pos
+            anchor_id, anchor_pos, anchor_vertices = create_anchor(
+                self.sim, anchor_init_pos, i,
+                preset_dynamic_anchor_vertices, mesh)
+            attach_anchor(self.sim, anchor_id, anchor_vertices, self.deform_id)
+            self.anchors[anchor_id] = {'pos': anchor_pos,
+                                       'vertices': anchor_vertices}
+
     def reset(self):
         self.stepnum = 0
         self.episode_reward = 0.0
@@ -274,7 +289,7 @@ class DeformEnv(gym.Env):
         # Setup dynamic anchors.
         if not self.food_packing:
             self.make_anchors()
-            print("\n\n\n\n\nWESh AGATHE", self.anchors)
+        self.make_anchors()
 
         # Set up viz.
         if self.args.viz:  # loading done, so enable debug rendering if needed
@@ -284,20 +299,6 @@ class DeformEnv(gym.Env):
 
         obs, _ = self.get_obs()
         return obs
-
-    def make_anchors(self):
-        preset_dynamic_anchor_vertices = get_preset_properties(
-            DEFORM_INFO, self.deform_obj, 'deform_anchor_vertices')
-        _, mesh = get_mesh_data(self.sim, self.deform_id)
-        for i in range(self.num_anchors):  # make anchors
-            anchor_init_pos = self.args.anchor_init_pos if (i % 2) == 0 else \
-                self.args.other_anchor_init_pos
-            anchor_id, anchor_pos, anchor_vertices = create_anchor(
-                self.sim, anchor_init_pos, i,
-                preset_dynamic_anchor_vertices, mesh)
-            attach_anchor(self.sim, anchor_id, anchor_vertices, self.deform_id)
-            self.anchors[anchor_id] = {'pos': anchor_pos,
-                                       'vertices': anchor_vertices}
 
     def debug_viz_cent_loop(self):
         # DEBUG visualize true loop center
@@ -314,6 +315,7 @@ class DeformEnv(gym.Env):
             #                     rgba=(0, 1, 0.8, alpha), use_collision=False)
 
     def step(self, action, unscaled=False):
+        print("\n\nANCHOR =", self.anchors)
         if self.args.debug:
             print('action', action)
         if not unscaled:
