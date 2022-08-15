@@ -1,0 +1,3 @@
+(link|joint) name="([a-z0-9_]*)
+$1 name="$2_r
+
