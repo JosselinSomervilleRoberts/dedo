@@ -114,7 +114,7 @@ class DeformRobotEnv(DeformEnv):
 
         dist_xy = self.robot.base.get_plane_distance_to_target(tgt_pos)
         MAX_DIST_XY = 4.5
-        THRESHOLD_DIST_XY = 2.8
+        THRESHOLD_DIST_XY = 3.8
         if not self.robot.base.fixed and ((self.robot.base.moving and dist_xy > THRESHOLD_DIST_XY) or (dist_xy  > MAX_DIST_XY)):
             tgt_qpos = self.robot.ee_pos_to_qpos(**tgt_kwargs)
             self.robot.base.moving = True
