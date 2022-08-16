@@ -43,6 +43,7 @@ def play(env, num_episodes, args):
     assert deform_obj in preset_traj, \
         f'deform_obj {deform_obj:s} not in presets {preset_traj.keys()}'
     preset_wp = preset_traj[deform_obj]['waypoints']
+    print("\n\n\npreset_wp =", preset_wp)
     vidwriter = None
     if args.cam_resolution > 0 and args.logdir is not None:
         if not os.path.exists(args.logdir):
@@ -75,8 +76,11 @@ def play(env, num_episodes, args):
         robot = None
         if hasattr(env, 'robot'):
             robot = env.robot
+        print("preset_wp =", preset_wp)
         pos_traj, vel_traj = build_traj(
             env, preset_wp, 'a', anchor_idx=0, ctrl_freq=ctrl_freq, robot=robot)
+        print("pos_traj =", pos_traj)
+        print("vel_traj =", vel_traj)
         pos_traj_b, traj_b = None, None
         if 'b' in preset_wp:
             pos_traj_b, traj_b = build_traj(env, preset_wp, 'b', anchor_idx=1,
@@ -100,7 +104,9 @@ def play(env, num_episodes, args):
             assert (traj_ori.shape[0] == traj.shape[0])
             assert (traj_ori.shape[1] == 6)  # Euler sin,sin,sin,cos,cos,cos
             traj = np.hstack([traj, traj_ori])
-
+        
+        for i in range(10):
+            print(traj[i])
         gif_frames = []
         rwds = []
         print(f'# {args.env}:')

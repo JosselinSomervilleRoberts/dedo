@@ -113,7 +113,7 @@ class DeformRobotEnv(DeformEnv):
         sub_i = 0
 
         dist_xy = self.robot.base.get_plane_distance_to_target(tgt_pos)
-        MAX_DIST_XY = 4
+        MAX_DIST_XY = 4.5
         THRESHOLD_DIST_XY = 2.8
         if not self.robot.base.fixed and ((self.robot.base.moving and dist_xy > THRESHOLD_DIST_XY) or (dist_xy  > MAX_DIST_XY)):
             tgt_qpos = self.robot.ee_pos_to_qpos(**tgt_kwargs)
@@ -139,9 +139,6 @@ class DeformRobotEnv(DeformEnv):
             tgt_qpos = self.robot.ee_pos_to_qpos(**tgt_kwargs)
             max_diff = 0.02
             diff = self.robot.get_qpos() - tgt_qpos
-            print("diff =", diff)
-            print(tgt_qpos)
-            print(self.robot.get_qpos())
             while (np.abs(diff) > max_diff).any():
                 self.robot.move_to_qpos(
                     tgt_qpos, mode=pybullet.POSITION_CONTROL, kp=0.1, kd=1.0)

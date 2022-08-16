@@ -289,7 +289,6 @@ class DeformEnv(gym.Env):
         # Setup dynamic anchors.
         if not self.food_packing:
             self.make_anchors()
-        self.make_anchors()
 
         # Set up viz.
         if self.args.viz:  # loading done, so enable debug rendering if needed
@@ -315,7 +314,6 @@ class DeformEnv(gym.Env):
             #                     rgba=(0, 1, 0.8, alpha), use_collision=False)
 
     def step(self, action, unscaled=False):
-        print("\n\nANCHOR =", self.anchors)
         if self.args.debug:
             print('action', action)
         if not unscaled:

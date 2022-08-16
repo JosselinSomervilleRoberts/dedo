@@ -71,9 +71,9 @@ class ManipulatorInfo:
 class BaseManipulator:
 
     MAX_FORCE = 100000000
-    MAX_LINEAR_SPEED = 100
-    MAX_LINEAR_ACCEL = 1000
-    LINEAR_JERK = 1000
+    MAX_LINEAR_SPEED = 50
+    MAX_LINEAR_ACCEL = 500
+    LINEAR_JERK = 500
 
     def __init__(self, sim: bclient.BulletClient, robot_id) -> None:
         self.sim = sim

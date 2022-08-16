@@ -743,7 +743,7 @@ DEFORM_INFO = {
         'deform_texture_file': 'textures/deform/pb_whitered_checker.jpg',
     },
     'cloth/apron_5.obj': {
-        'deform_init_pos': [0, 5, 8],
+        'deform_init_pos': [17 - 6.9, 11 + 0.9, 8.3],
         'deform_init_ori': [np.pi / 2, 0, np.pi],
         'deform_scale': 3,
         'deform_elastic_stiffness': 50,
@@ -1387,7 +1387,7 @@ ROBOT_INFO = {
         'ee_link_name': 'l_gripper_finger_link',
         'global_scaling': 8.0,
         'use_fixed_base': False,
-        'base_pos': np.array([7.0, 3.9, 0]),
+        'base_pos': np.array([17, 11, 0]),
         'rest_arm_qpos': np.array(
             [0, -0.5, 0, -1, 0, +1.5, 0]
         ),
