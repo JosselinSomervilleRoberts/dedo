@@ -131,7 +131,7 @@ class DeformRobotEnv(DeformEnv):
             result["left_ee_ori"] = left_ee_ori
             result["left_tgt_pos"] = left_tgt_pos
             result["left_tgt_ee_ori"] = left_tgt_ee_ori
-        dist_xy = self.robot.base.get_plane_distance_to_target(tgt_pos)
+        dist_xy, dist_ori = self.robot.base.get_plane_distance_and_ori_to_tgt(tgt_pos)
         tgt_qpos = self.robot.ee_pos_to_qpos(**tgt_kwargs)
 
         result["ee_pos"] = ee_pos
@@ -139,6 +139,7 @@ class DeformRobotEnv(DeformEnv):
         result["tgt_pos"] = tgt_pos
         result["tgt_ee_ori"] = tgt_ee_ori
         result["dist_xy"] = dist_xy
+        result["dist_ori"] = dist_ori
         result["tgt_qpos"] = tgt_qpos
         return result
 
@@ -147,8 +148,8 @@ class DeformRobotEnv(DeformEnv):
         positions_dict = self.get_tgt_pos_detailed(action, unscaled)
         n_slack = self.n_slack  # use > 1 if robot has trouble reaching the pose
         sub_i = 0
-        MAX_DIST_XY = 4.5
-        THRESHOLD_DIST_XY = 4.5
+        MAX_DIST_XY = 5.0
+        THRESHOLD_DIST_XY = 5.0
         KD = 1.2
         KP = 0.2
 
@@ -164,7 +165,7 @@ class DeformRobotEnv(DeformEnv):
                 self.robot.base.linear_acceleration = min(BaseManipulator.MAX_LINEAR_ACCEL, self.robot.base.linear_acceleration)
                 self.robot.base.linear_speed += self.robot.base.linear_acceleration * dt
                 self.robot.base.linear_speed = min(BaseManipulator.MAX_LINEAR_SPEED, self.robot.base.linear_speed)
-                self.robot.move_base(self.robot.base.linear_speed * direction * dt, np.array([0]))
+                self.robot.move_base(self.robot.base.linear_speed * direction * dt, np.array([1.0 * positions_dict["dist_ori"]]))
                 self.robot.move_to_qpos(
                     positions_dict["tgt_qpos"], mode=pybullet.POSITION_CONTROL, kp=KP, kd=KD)
                 self.sim.stepSimulation()
@@ -178,8 +179,8 @@ class DeformRobotEnv(DeformEnv):
             diff = self.robot.get_qpos() - positions_dict["tgt_qpos"]
             while (np.abs(diff) > max_diff).any():
                 self.robot.move_to_qpos(
-                    positions_dict["tgt_qpos"], mode=pybullet.POSITION_CONTROL, kp=KP, kd=KD)
-                if not self.robot.base.fixed: self.robot.move_base(np.array([0,0,0]), np.array([0]))
+                   positions_dict["tgt_qpos"], mode=pybullet.POSITION_CONTROL, kp=KP, kd=KD)
+                if not self.robot.base.fixed: self.robot.move_base(np.array([0,0,0]), np.array([1.0 * positions_dict["dist_ori"]]))
                 self.sim.stepSimulation()
                 positions_dict = self.get_tgt_pos_detailed(action, unscaled)
                 diff = self.robot.get_qpos() - positions_dict["tgt_qpos"]
@@ -189,6 +190,7 @@ class DeformRobotEnv(DeformEnv):
         if self.plot_trajectory:
             ee_pos, ee_ori, _, _ = self.robot.get_ee_pos_ori_vel()
             add_debug_pos(self.robot.sim, ee_pos, clr = [1,0,0])
+            print(self.robot.base.get_ori())
 
     def make_final_steps(self):
         ee_pos, ee_ori, *_ = self.robot.get_ee_pos_ori_vel()

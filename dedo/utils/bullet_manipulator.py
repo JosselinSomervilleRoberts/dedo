@@ -12,6 +12,7 @@ add further comments, unify the style, improve efficiency and add unittests.
 from copy import copy
 import os
 import time
+from typing import Tuple
 
 import numpy as np
 
@@ -100,11 +101,29 @@ class BaseManipulator:
         base_pos = base_state[0]
         return base_pos
 
+    def get_ori(self) -> np.array:
+        base_state = self.sim.getLinkState(
+            self.robot_id, 0, computeLinkVelocity=0)
+        base_quat = base_state[1]
+        return self.sim.getEulerFromQuaternion(base_quat)
+
     def get_plane_distance_to_target(self, tgt_pos: np.array) -> float:
         base_pos_xy = self.get_pos()[:2]
         tgt_pos_xy = tgt_pos[:2]
         dist_xy = np.linalg.norm(base_pos_xy - tgt_pos_xy)
         return dist_xy
+
+    def get_plane_distance_and_ori_to_tgt(self, tgt_pos: np.array):
+        base_pos_xy = self.get_pos()[:2]
+        tgt_pos_xy = tgt_pos[:2]
+        vect_base_to_tgt_xy = tgt_pos_xy - base_pos_xy
+        dist_pos_xy = np.linalg.norm(vect_base_to_tgt_xy)
+        ori = np.arctan2(vect_base_to_tgt_xy[0], vect_base_to_tgt_xy[1])
+        base_ori = self.get_ori()[2]
+        dist_ori = ori - base_ori
+        while dist_ori < - np.pi: dist_ori += 2 * np.pi
+        while dist_ori > + np.pi: dist_ori -= 2 * np.pi
+        return dist_pos_xy, dist_ori
 
     def move_to(self, next_base_pos: np.array, next_base_ori: np.array) -> None:
         self.sim.changeConstraint(self.cid, next_base_pos, next_base_ori,
