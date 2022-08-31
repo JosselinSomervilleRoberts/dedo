@@ -149,8 +149,8 @@ class DeformRobotEnv(DeformEnv):
         sub_i = 0
         MAX_DIST_XY = 4.5
         THRESHOLD_DIST_XY = 4.5
-        KD = 1.0
-        KP = 0.1
+        KD = 1.2
+        KP = 0.2
 
         if self.plot_trajectory:
             add_debug_pos(self.robot.sim, positions_dict["tgt_pos"], clr = [0,1,0])
