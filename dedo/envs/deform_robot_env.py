@@ -26,6 +26,12 @@ from ..utils.task_info import DEFORM_INFO, ROBOT_INFO
 from .deform_env import DeformEnv
 
 
+def add_debug_pos(sim, pos, size=0.01, clr=[1,0,1]):
+    sim.addUserDebugLine(pos-np.array([size,0,0]), pos+np.array([size,0,0]),
+                         lineColorRGB=clr)
+    sim.addUserDebugLine(pos-np.array([0,size,0]), pos+np.array([0,size,0]),
+                         lineColorRGB=clr)
+
 class DeformRobotEnv(DeformEnv):
     ORI_SIZE = 3 * 2  # 3D position + sin,cos for 3 Euler angles
     FING_DIST = 0.01  # default finger distance
@@ -48,6 +54,11 @@ class DeformRobotEnv(DeformEnv):
         return act * DeformEnv.WORKSPACE_BOX_SIZE
 
     def load_objects(self, sim: bclient.BulletClient, args, debug: bool):
+        # Debug flags
+        self.disable_anchors = args.disable_anchors
+        self.plot_trajectory = args.plot_trajectory
+        self.n_slack = args.n_slack
+
         res = super(DeformRobotEnv, self).load_objects(sim, args, debug)
         data_path = os.path.join(os.path.split(__file__)[0], '..', 'data')
         sim.setAdditionalSearchPath(data_path)
@@ -55,6 +66,11 @@ class DeformRobotEnv(DeformEnv):
         assert(robot_info is not None)  # make sure robot_info is ok
         robot_path = os.path.join(data_path, 'robots',
                                   robot_info['file_name'])
+
+        # Flags override
+        if args.override_fix_base:
+            robot_info['use_fixed_base'] = True
+
         if debug:
             print('Loading robot from', robot_path)
         self.robot = BulletManipulator(
@@ -87,9 +103,10 @@ class DeformRobotEnv(DeformEnv):
             link_id = self.robot.info.ee_link_id if i == 0 else \
                 self.robot.info.left_ee_link_id
             print(self.robot.info.robot_id, link_id)
-            self.sim.createSoftBodyAnchor(
-                self.deform_id, preset_dynamic_anchor_vertices[i][0],
-                self.robot.info.robot_id, link_id)
+            if not self.disable_anchors:
+                self.sim.createSoftBodyAnchor(
+                    self.deform_id, preset_dynamic_anchor_vertices[i][0],
+                    self.robot.info.robot_id, link_id)
 
     def do_action(self, action, unscaled=False, dt=1./240):
         # Note: action is in [-1,1], so we unscale pos (ori is sin,cos so ok).
@@ -109,12 +126,14 @@ class DeformRobotEnv(DeformEnv):
             tgt_kwargs.update({'left_ee_pos': left_tgt_pos,
                                'left_ee_ori': left_tgt_ee_ori,
                                'left_fing_dist': DeformRobotEnv.FING_DIST})
-        n_slack = 3  # use > 1 if robot has trouble reaching the pose
+        n_slack = self.n_slack  # use > 1 if robot has trouble reaching the pose
         sub_i = 0
 
         dist_xy = self.robot.base.get_plane_distance_to_target(tgt_pos)
         MAX_DIST_XY = 4.5
         THRESHOLD_DIST_XY = 3.8
+        if self.plot_trajectory:
+            add_debug_pos(self.robot.sim, tgt_pos, clr = [0,1,0])
         if not self.robot.base.fixed and ((self.robot.base.moving and dist_xy > THRESHOLD_DIST_XY) or (dist_xy  > MAX_DIST_XY)):
             tgt_qpos = self.robot.ee_pos_to_qpos(**tgt_kwargs)
             self.robot.base.moving = True
@@ -148,6 +167,9 @@ class DeformRobotEnv(DeformEnv):
                 sub_i += 1
                 if sub_i >= n_slack:
                     diff = np.zeros_like(diff)  # set while loop to done
+        if self.plot_trajectory:
+            ee_pos, ee_ori, _, _ = self.robot.get_ee_pos_ori_vel()
+            add_debug_pos(self.robot.sim, ee_pos, clr = [1,0,0])
 
     def make_final_steps(self):
         ee_pos, ee_ori, *_ = self.robot.get_ee_pos_ori_vel()

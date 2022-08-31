@@ -19,6 +19,18 @@ import re
 def get_args_parser():
     parser = argparse.ArgumentParser(description='args', add_help=True)
     #
+    # Debug args
+    parser.add_argument('--disable_anchors', type=bool,
+                        default=False, help='Enable/Disable anchors')
+    parser.add_argument('--plot_trajectory', type=bool,
+                        default=False, help='Visualize the target and the real trajectory of the ee')
+    parser.add_argument('--n_slack', type=int,
+                        default=1, help='Number of control steps per simulation step')
+    parser.add_argument('--override_fix_base', type=bool,
+                        default=False, help='Fix the base')
+
+
+    #
     # Main/demo args.
     parser.add_argument('--env', type=str,
                         default='HangGarment-v1', help='Env name')

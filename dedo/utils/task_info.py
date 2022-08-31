@@ -749,7 +749,7 @@ DEFORM_INFO = {
         'deform_elastic_stiffness': 50,
         'deform_bending_stiffness': 1,
         'deform_damping_stiffness': 0.01,
-        'cam_viewmat': [8.8, -12.6, 314, -0.4, 0.6, 5.3],
+        'cam_viewmat': [-8.8, -18.6, 314, -0.4, 0.6, 5.3],
         'deform_anchor_vertices': [
             [15], 
         ],
