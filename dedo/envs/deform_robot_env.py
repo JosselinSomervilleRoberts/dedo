@@ -170,7 +170,7 @@ class DeformRobotEnv(DeformEnv):
                 positions_dict = self.get_tgt_pos_detailed(action, unscaled)
                 sub_i += 1
                 if sub_i >= n_slack:
-                    dist_xy = 0
+                    positions_dict["dist_xy"] = 0
         else:
             self.robot.base.stop()
             max_diff = 0.02
