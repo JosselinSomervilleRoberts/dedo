@@ -149,6 +149,8 @@ class DeformRobotEnv(DeformEnv):
         sub_i = 0
         MAX_DIST_XY = 4.5
         THRESHOLD_DIST_XY = 4.5
+        KD = 1.0
+        KP = 0.1
 
         if self.plot_trajectory:
             add_debug_pos(self.robot.sim, positions_dict["tgt_pos"], clr = [0,1,0])
@@ -162,9 +164,9 @@ class DeformRobotEnv(DeformEnv):
                 self.robot.base.linear_acceleration = min(BaseManipulator.MAX_LINEAR_ACCEL, self.robot.base.linear_acceleration)
                 self.robot.base.linear_speed += self.robot.base.linear_acceleration * dt
                 self.robot.base.linear_speed = min(BaseManipulator.MAX_LINEAR_SPEED, self.robot.base.linear_speed)
-                self.robot.move_base(self.robot.base.linear_speed * direction, np.array([0]))
+                self.robot.move_base(self.robot.base.linear_speed * direction * dt, np.array([0]))
                 self.robot.move_to_qpos(
-                    positions_dict["tgt_qpos"], mode=pybullet.POSITION_CONTROL, kp=0.1, kd=1.0)
+                    positions_dict["tgt_qpos"], mode=pybullet.POSITION_CONTROL, kp=KP, kd=KD)
                 self.sim.stepSimulation()
                 positions_dict = self.get_tgt_pos_detailed(action, unscaled)
                 sub_i += 1
@@ -176,9 +178,10 @@ class DeformRobotEnv(DeformEnv):
             diff = self.robot.get_qpos() - positions_dict["tgt_qpos"]
             while (np.abs(diff) > max_diff).any():
                 self.robot.move_to_qpos(
-                    positions_dict["tgt_qpos"], mode=pybullet.POSITION_CONTROL, kp=0.1, kd=1.0)
+                    positions_dict["tgt_qpos"], mode=pybullet.POSITION_CONTROL, kp=KP, kd=KD)
                 if not self.robot.base.fixed: self.robot.move_base(np.array([0,0,0]), np.array([0]))
                 self.sim.stepSimulation()
+                positions_dict = self.get_tgt_pos_detailed(action, unscaled)
                 diff = self.robot.get_qpos() - positions_dict["tgt_qpos"]
                 sub_i += 1
                 if sub_i >= n_slack:
