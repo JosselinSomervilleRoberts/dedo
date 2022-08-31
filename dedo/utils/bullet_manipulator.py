@@ -13,6 +13,7 @@ from copy import copy
 import os
 import time
 from typing import Tuple
+from simple_pid import PID
 
 import numpy as np
 
@@ -69,17 +70,24 @@ class ManipulatorInfo:
               '\n left_finger_jids_lst', self.left_finger_jids_lst)
 
 
+def sign(x):
+    if x > 0:
+        return 1
+    elif x < 0:
+        return -1
+    return 0
+
 class BaseManipulator:
 
     MAX_FORCE = 100000000
-    MAX_LINEAR_SPEED = 5000
-    MAX_LINEAR_ACCEL = 500000
-    LINEAR_JERK = 500000
+    DESIRED_DIST = 4.5
 
     def __init__(self, sim: bclient.BulletClient, robot_id) -> None:
         self.sim = sim
         self.robot_id = robot_id
         self.set_fixed()
+        self.pid_ori = None
+        self.pid_pos = None
 
     def set_fixed(self) -> None:
         self.fixed = True
@@ -94,6 +102,8 @@ class BaseManipulator:
         self.cid = self.sim.createConstraint(
                 self.robot_id, -1, -1, -1, self.sim.JOINT_FIXED, [0.0, 0, 0],
                 [0.0, 0, 0], base_pos)
+        self.pid_pos = PID(1, 0.1, 0.05, setpoint=self.get_pos()[:2])
+        self.pid_ori = PID(0.1, 0.01, 0.005, setpoint=self.get_ori()[2])
 
     def get_pos(self) -> np.array:
         base_state = self.sim.getLinkState(
@@ -106,6 +116,13 @@ class BaseManipulator:
             self.robot_id, 0, computeLinkVelocity=0)
         base_quat = base_state[1]
         return self.sim.getEulerFromQuaternion(base_quat)
+
+    def get_pos_and_ori(self):
+        base_state = self.sim.getLinkState(
+            self.robot_id, 0, computeLinkVelocity=0)
+        base_pos = base_state[0]
+        base_quat = base_state[1]
+        return base_pos, self.sim.getEulerFromQuaternion(base_quat)
 
     def get_plane_distance_to_target(self, tgt_pos: np.array) -> float:
         base_pos_xy = self.get_pos()[:2]
@@ -133,6 +150,21 @@ class BaseManipulator:
         self.moving = False
         self.linear_acceleration = 0
         self.linear_speed = 0
+
+    def control_get_speeds(self, tgt_pos, tgt_ori):
+        # ===== PID code NOT WORKING ====== #
+        # self.pid_pos.setpoint = tgt_pos
+        # self.pid_ori.setpoint = tgt_ori
+        # base_pos, base_ori = self.get_pos_and_ori()
+        # action_pos = self.pid_pos(np.array(base_pos[:2]))
+        # action_ori = self.pid_ori(base_ori[2])
+        # return action_pos, action_ori
+
+        base_pos, base_ori = self.get_pos_and_ori()
+        dir_vector = tgt_pos - np.array(base_pos[:2])
+        if np.linalg.norm(dir_vector) > 0:
+             dir_vector /= np.linalg.norm(dir_vector)
+        return 10 * dir_vector, 5 * sign(tgt_ori - base_ori[2])
 
 
 
