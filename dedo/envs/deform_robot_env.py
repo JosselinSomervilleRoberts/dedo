@@ -147,8 +147,8 @@ class DeformRobotEnv(DeformEnv):
         positions_dict = self.get_tgt_pos_detailed(action, unscaled)
         n_slack = self.n_slack  # use > 1 if robot has trouble reaching the pose
         sub_i = 0
-        MAX_DIST_XY = 4.0
-        THRESHOLD_DIST_XY = 4.0
+        MAX_DIST_XY = 4.5
+        THRESHOLD_DIST_XY = 4.5
 
         if self.plot_trajectory:
             add_debug_pos(self.robot.sim, positions_dict["tgt_pos"], clr = [0,1,0])
@@ -166,7 +166,6 @@ class DeformRobotEnv(DeformEnv):
                 self.robot.move_to_qpos(
                     positions_dict["tgt_qpos"], mode=pybullet.POSITION_CONTROL, kp=0.1, kd=1.0)
                 self.sim.stepSimulation()
-                # dist_xy = self.robot.base.get_plane_distance_to_target(tgt_pos)
                 positions_dict = self.get_tgt_pos_detailed(action, unscaled)
                 sub_i += 1
                 if sub_i >= n_slack:
