@@ -108,7 +108,8 @@ class DeformRobotEnv(DeformEnv):
                     self.deform_id, preset_dynamic_anchor_vertices[i][0],
                     self.robot.info.robot_id, link_id)
 
-    def do_action(self, action, unscaled=False, dt=1./240):
+    def get_tgt_pos_detailed(self, action, unscaled=False):
+        result = {}
         # Note: action is in [-1,1], so we unscale pos (ori is sin,cos so ok).
         action = action.reshape(self.num_anchors, -1)
         ee_pos, ee_ori, _, _ = self.robot.get_ee_pos_ori_vel()
@@ -125,20 +126,36 @@ class DeformRobotEnv(DeformEnv):
                 action[1, 3:]
             tgt_kwargs.update({'left_ee_pos': left_tgt_pos,
                                'left_ee_ori': left_tgt_ee_ori,
-                               'left_fing_dist': DeformRobotEnv.FING_DIST})
+                                'left_fing_dist': DeformRobotEnv.FING_DIST})
+            result["left_ee_pos"] = left_ee_pos
+            result["left_ee_ori"] = left_ee_ori
+            result["left_tgt_pos"] = left_tgt_pos
+            result["left_tgt_ee_ori"] = left_tgt_ee_ori
+        dist_xy = self.robot.base.get_plane_distance_to_target(tgt_pos)
+        tgt_qpos = self.robot.ee_pos_to_qpos(**tgt_kwargs)
+
+        result["ee_pos"] = ee_pos
+        result["ee_ori"] = ee_ori
+        result["tgt_pos"] = tgt_pos
+        result["tgt_ee_ori"] = tgt_ee_ori
+        result["dist_xy"] = dist_xy
+        result["tgt_qpos"] = tgt_qpos
+        return result
+
+
+    def do_action(self, action, unscaled=False, dt=1./240):
+        positions_dict = self.get_tgt_pos_detailed(action, unscaled)
         n_slack = self.n_slack  # use > 1 if robot has trouble reaching the pose
         sub_i = 0
+        MAX_DIST_XY = 4.0
+        THRESHOLD_DIST_XY = 4.0
 
-        dist_xy = self.robot.base.get_plane_distance_to_target(tgt_pos)
-        MAX_DIST_XY = 4.5
-        THRESHOLD_DIST_XY = 3.8
         if self.plot_trajectory:
-            add_debug_pos(self.robot.sim, tgt_pos, clr = [0,1,0])
-        if not self.robot.base.fixed and ((self.robot.base.moving and dist_xy > THRESHOLD_DIST_XY) or (dist_xy  > MAX_DIST_XY)):
-            tgt_qpos = self.robot.ee_pos_to_qpos(**tgt_kwargs)
+            add_debug_pos(self.robot.sim, positions_dict["tgt_pos"], clr = [0,1,0])
+        if not self.robot.base.fixed and ((self.robot.base.moving and positions_dict["dist_xy"] > THRESHOLD_DIST_XY) or (positions_dict["dist_xy"]  > MAX_DIST_XY)):
             self.robot.base.moving = True
-            while dist_xy > THRESHOLD_DIST_XY:
-                direction = tgt_pos - self.robot.base.get_pos()
+            while positions_dict["dist_xy"] > THRESHOLD_DIST_XY:
+                direction = positions_dict["tgt_pos"] - self.robot.base.get_pos()
                 assert(direction[0] != 0 or direction[1] != 0)
                 direction /= np.linalg.norm(direction)
                 self.robot.base.linear_acceleration += BaseManipulator.LINEAR_JERK * dt
@@ -147,23 +164,23 @@ class DeformRobotEnv(DeformEnv):
                 self.robot.base.linear_speed = min(BaseManipulator.MAX_LINEAR_SPEED, self.robot.base.linear_speed)
                 self.robot.move_base(self.robot.base.linear_speed * direction, np.array([0]))
                 self.robot.move_to_qpos(
-                    tgt_qpos, mode=pybullet.POSITION_CONTROL, kp=0.1, kd=1.0)
+                    positions_dict["tgt_qpos"], mode=pybullet.POSITION_CONTROL, kp=0.1, kd=1.0)
                 self.sim.stepSimulation()
-                dist_xy = self.robot.base.get_plane_distance_to_target(tgt_pos)
+                # dist_xy = self.robot.base.get_plane_distance_to_target(tgt_pos)
+                positions_dict = self.get_tgt_pos_detailed(action, unscaled)
                 sub_i += 1
                 if sub_i >= n_slack:
                     dist_xy = 0
         else:
             self.robot.base.stop()
-            tgt_qpos = self.robot.ee_pos_to_qpos(**tgt_kwargs)
             max_diff = 0.02
-            diff = self.robot.get_qpos() - tgt_qpos
+            diff = self.robot.get_qpos() - positions_dict["tgt_qpos"]
             while (np.abs(diff) > max_diff).any():
                 self.robot.move_to_qpos(
-                    tgt_qpos, mode=pybullet.POSITION_CONTROL, kp=0.1, kd=1.0)
+                    positions_dict["tgt_qpos"], mode=pybullet.POSITION_CONTROL, kp=0.1, kd=1.0)
                 if not self.robot.base.fixed: self.robot.move_base(np.array([0,0,0]), np.array([0]))
                 self.sim.stepSimulation()
-                diff = self.robot.get_qpos() - tgt_qpos
+                diff = self.robot.get_qpos() - positions_dict["tgt_qpos"]
                 sub_i += 1
                 if sub_i >= n_slack:
                     diff = np.zeros_like(diff)  # set while loop to done
