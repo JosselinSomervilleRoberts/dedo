@@ -80,7 +80,7 @@ def sign(x):
 class BaseManipulator:
 
     MAX_FORCE = 100000000
-    DESIRED_DIST = 4.5
+    DESIRED_DIST = 7.0
 
     def __init__(self, sim: bclient.BulletClient, robot_id) -> None:
         self.sim = sim
@@ -102,8 +102,10 @@ class BaseManipulator:
         self.cid = self.sim.createConstraint(
                 self.robot_id, -1, -1, -1, self.sim.JOINT_FIXED, [0.0, 0, 0],
                 [0.0, 0, 0], base_pos)
-        self.pid_pos = PID(1, 0.1, 0.05, setpoint=self.get_pos()[:2])
+        self.pid_pos = PID(20, 0.2, 0.05, setpoint=self.get_pos()[:2])
         self.pid_ori = PID(0.1, 0.01, 0.005, setpoint=self.get_ori()[2])
+        #self.pid_pos.output_limits = (np.array([-8,-8]), np.array([8,8]))
+        self.pid_ori.output_limits = (-4, 4)
 
     def get_pos(self) -> np.array:
         base_state = self.sim.getLinkState(
@@ -153,12 +155,20 @@ class BaseManipulator:
 
     def control_get_speeds(self, tgt_pos, tgt_ori):
         # ===== PID code NOT WORKING ====== #
-        # self.pid_pos.setpoint = tgt_pos
-        # self.pid_ori.setpoint = tgt_ori
-        # base_pos, base_ori = self.get_pos_and_ori()
-        # action_pos = self.pid_pos(np.array(base_pos[:2]))
-        # action_ori = self.pid_ori(base_ori[2])
-        # return action_pos, action_ori
+        base_pos, base_ori = self.get_pos_and_ori()
+        action_pos = self.pid_pos(np.array(base_pos[:2]))
+        if np.linalg.norm(action_pos) > 10:
+            action_pos = 10 * action_pos / np.linalg.norm(action_pos)
+        action_ori = self.pid_ori(base_ori[2])
+        while tgt_ori - base_ori[2] > np.pi:
+            tgt_ori -= 2 * np.pi
+        while tgt_ori - base_ori[2] < -np.pi:
+            tgt_ori += 2 * np.pi
+        self.pid_pos.setpoint = tgt_pos
+        self.pid_ori.setpoint = tgt_ori
+        #print("Position", tgt_pos, base_pos[:2], action_pos)
+        #print("Orientation", tgt_ori, base_ori[2], action_ori)
+        return action_pos, action_ori
 
         base_pos, base_ori = self.get_pos_and_ori()
         dir_vector = tgt_pos - np.array(base_pos[:2])

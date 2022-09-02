@@ -136,13 +136,23 @@ class DeformRobotEnv(DeformEnv):
 
         if not self.robot.base.fixed:
             base_pos_xy = self.robot.base.get_pos()[:2]
+            base_pos = np.array([base_pos_xy[0], base_pos_xy[1], 6.])
+
+            # Computes the desired planar distance
+            dz = tgt_pos[2] - base_pos[2]
+            desired_dist_xy = np.sqrt(BaseManipulator.DESIRED_DIST**2 - dz**2)
+
+            # Gets the planar direction from the base to the target ee.
             tgt_pos_xy = tgt_pos[:2]
             vect_base_to_tgt_xy = tgt_pos_xy - base_pos_xy
             dir_base_to_tgt_xy = np.array([0,1])
             norm_vect_base_to_tgt_xy = np.linalg.norm(vect_base_to_tgt_xy)
             if norm_vect_base_to_tgt_xy > 0:
                 dir_base_to_tgt_xy = vect_base_to_tgt_xy / norm_vect_base_to_tgt_xy
-            result["tgt_base_pos_xy"] = tgt_pos_xy - BaseManipulator.DESIRED_DIST * dir_base_to_tgt_xy
+
+            # Computes the desired position such that the arm length is equal to DESIRED_DIST
+            # and the robot faces the target ee.
+            result["tgt_base_pos_xy"] = tgt_pos_xy - desired_dist_xy * dir_base_to_tgt_xy
             result["tgt_base_ori"] = np.arctan2(vect_base_to_tgt_xy[0], vect_base_to_tgt_xy[1])
 
         result["ee_pos"] = ee_pos
@@ -178,7 +188,7 @@ class DeformRobotEnv(DeformEnv):
                 base_lin_speed, base_rot_speed = self.robot.base.control_get_speeds(positions_dict["tgt_base_pos_xy"], positions_dict["tgt_base_ori"])
                 # It seems to work better without turning the base
                 # self.robot.move_base(np.array([base_lin_speed[0], base_lin_speed[1], 0]), np.array([-base_rot_speed]))
-                self.robot.move_base(np.array([base_lin_speed[0], base_lin_speed[1], 0]), np.array([0]))
+                self.robot.move_base(np.array([base_lin_speed[0], base_lin_speed[1], 0]), np.array([base_rot_speed]))
 
             # Moves the arm
             self.robot.move_to_qpos(positions_dict["tgt_qpos"], mode=pybullet.POSITION_CONTROL, kp=KP, kd=KD)

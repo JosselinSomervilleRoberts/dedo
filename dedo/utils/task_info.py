@@ -1387,7 +1387,7 @@ ROBOT_INFO = {
         'ee_link_name': 'l_gripper_finger_link',
         'global_scaling': 8.0,
         'use_fixed_base': False,
-        'base_pos': np.array([17, 11, 0]),
+        'base_pos': np.array([17, 11.1, 0]),
         'rest_arm_qpos': np.array(
             [0, -0.5, 0, -1, 0, +1.5, 0]
         ),
