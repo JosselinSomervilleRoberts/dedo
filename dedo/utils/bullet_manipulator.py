@@ -80,7 +80,7 @@ def sign(x):
 class BaseManipulator:
 
     MAX_FORCE = 100000000
-    DESIRED_DIST = 7.0
+    DESIRED_DIST = 6.0
 
     def __init__(self, sim: bclient.BulletClient, robot_id) -> None:
         self.sim = sim
@@ -102,7 +102,7 @@ class BaseManipulator:
         self.cid = self.sim.createConstraint(
                 self.robot_id, -1, -1, -1, self.sim.JOINT_FIXED, [0.0, 0, 0],
                 [0.0, 0, 0], base_pos)
-        self.pid_pos = PID(20, 0.2, 0.05, setpoint=self.get_pos()[:2])
+        self.pid_pos = PID(50, 0.2, 0.5, setpoint=self.get_pos()[:2])
         self.pid_ori = PID(0.1, 0.01, 0.005, setpoint=self.get_ori()[2])
         #self.pid_pos.output_limits = (np.array([-8,-8]), np.array([8,8]))
         self.pid_ori.output_limits = (-4, 4)
